@@ -1,12 +1,22 @@
 try {
-   
+    # Tarkista admin käyttöoikeudet
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+    if (-not $isAdmin) {
+        # Nosta käyttöoikeus adminiksi
+        Start-Process powershell.exe -Verb RunAs -ArgumentList "-File $($MyInvocation.MyCommand.Path)"
+        exit
+    }
+
     # Asenna ExchangeOnlineManagement-moduuli
     Install-Module -Name ExchangeOnlineManagement -Force
     # Lataa ExchangeOnlineManagement-moduuli 
     Import-Module -Name ExchangeOnlineManagement
 
-    # Kirjaudu sisään Exchange Onlineen
-    Connect-ExchangeOnline -UserPrincipalName user@example.com -ShowProgress $true
+    # Kysy sähköpostiosoite käyttäjältä ja käytä sitä kirjautumisessa
+    $emailAddress = Read-Host -Prompt "Enter the email address to log in to Exchange Online"
+    $credential = Get-Credential -UserName $emailAddress
+    Connect-ExchangeOnline -Credential $credential
 
     # Lue sähköpostiosoitteet tiedostosta tai pyydä käyttäjältä
     if (Test-Path -Path .\mail.txt) {
